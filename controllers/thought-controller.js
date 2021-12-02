@@ -1,75 +1,100 @@
 // Import the models needed
-const { Comment, Pizza } = require("../models");
+const { Thought, User } = require("../models");
 
-const commentController = {
-  // add comment to pizza
-  addComment({ params, body }, res) {
-    console.log(body);
-    Comment.create(body)
-      .then(({ _id }) => {
-        return Pizza.findOneAndUpdate(
-          { _id: params.pizzaId },
-          { $push: { comments: _id } },
-          { new: true }
-        );
-      })
-      .then((dbPizzaData) => {
-        if (!dbPizzaData) {
-          res.status(404).json({ message: "No pizza found with this id!" });
+
+const thoughtController = {
+  getAllThought(req, res) {
+    Thought.find({})
+      .then((dbThoughtData) => res.json(dbThoughtData))
+      .catch((err) => {
+        console.log(err);
+        res.status(400).json(err);
+      });
+  },
+  // get one thought by id
+  getThoughtById({ params }, res) {
+    Thought.findOne({ _id: params.thoughtId })
+      .then((dbThoughtData) => {
+        if (!dbThoughtData) {
+          res.status(404).json({ message: "No thought found with this id!" });
           return;
         }
-        res.json(dbPizzaData);
+        res.json(dbThoughtData);
       })
-      .catch((err) => res.json(err));
+      .catch((err) => {
+        console.log(err);
+        res.status(400).json(err);
+      });
   },
-  // With new replies, we aren't actually creating a reply document; we're just updating an existing comment.
-  addReply({ params, body }, res) {
-    Comment.findOneAndUpdate(
-      { _id: params.commentId },
-      { $push: { replies: body } },
-      { new: true }
+  // createThought
+  createThought({ body }, res) {
+    Thought.create(body)
+      .then((dbThoughtData) => {
+        return User.findOneAndUpdate(
+          {_id: body.userId},
+          {$push:{thoughts: dbThoughtData._id}},
+          {new: true}
+        )
+       
+      }).then((dbUserData)=>{
+        if(!dbUserData){
+          return res.status(404).json({message: 'Thought created but no user with this ID'})
+        }
+
+        res.json({message: 'Thought was recorded. '})
+      })
+      .catch((err) => res.status(400).json(err));
+  },
+  // ??
+  addReaction({ params, body }, res) {
+    Thought.findOneAndUpdate(
+      { _id: params.thoughtId },
+      { $addtoSet: { reactions: body } },
+      { new: true, runValidators: true }
     )
       .then((dbPizzaData) => {
         if (!dbPizzaData) {
-          res.status(404).json({ message: "No pizza found with this id!" });
+          res.status(404).json({ message: "No user found with this id!" });
           return;
         }
         res.json(dbPizzaData);
       })
       .catch((err) => res.json(err));
   },
-  // Here, we're using the MongoDB $pull operator to remove the specific reply from the replies array where the replyId matches the value of params.replyId passed in from the route.
-  removeReply({ params, body }, res) {
-    Comment.findOneAndUpdate(
-      { _id: params.commentId },
-      { $pull: { replies: { replyId: params.replyId } } },
+  // ??
+  removeReactions({ params, body }, res) {
+    Thought.findOneAndUpdate(
+      { _id: params.thoughtId },
+      { $pull: { reactions: { reactionId: params.reactionId } } },
       { new: true }
     )
-      .then((dbPizzaData) => res.json(dbPizzaData))
+      .then((dbUserData) => res.json(dbUserData))
       .catch((err) => res.json(err));
   },
-  //   remove method
-  removeComment({ params }, res) {
-    Comment.findOneAndDelete({ _id: params.commentId })
-      .then((deletedComment) => {
-        if (!deletedComment) {
-          return res.status(404).json({ message: "No comment with this id!" });
-        }
-        return Pizza.findOneAndUpdate(
-          { _id: params.pizzaId },
-          { $pull: { comments: params.commentId } },
-          { new: true }
-        );
-      })
-      .then((dbPizzaData) => {
-        if (!dbPizzaData) {
-          res.status(404).json({ message: "No pizza found with this id!" });
+
+  // update thought by id
+  updateThought({ params, body }, res) {
+    Thought.findOneAndUpdate({ _id: params.thoughtId }, { $set: body}, { new: true })
+      .then((dbThoughtData) => {
+        if (!dbThoughtData) {
+          res.status(404).json({ message: "No thought found with this id!" });
           return;
         }
-        res.json(dbPizzaData);
+        res.json(dbThoughtData);
       })
-      .catch((err) => res.json(err));
+      .catch((err) => res.status(400).json(err));
+  },
+  deleteThought({ params }, res) {
+    Thought.findOneAndDelete({ _id: params.thoughtId })
+      .then((dbThoughtData) => {
+        if (!dbThoughtData) {
+          res.status(404).json({ message: "No thought found with this id!" });
+          return;
+        }
+        res.json(dbThoughtData);
+      })
+      .catch((err) => res.status(400).json(err));
   },
 };
 
-module.exports = commentController;
+module.exports = thoughtController;
