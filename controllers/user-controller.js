@@ -36,7 +36,7 @@ const userController = {
   addFriend({ params, body }, res) {
     User.findOneAndUpdate(
       { _id: params.commentId },
-      { $push: { users: body } },
+      { $push: { friends: body } },
       { new: true, runValidators: true }
     )
       .then((dbPizzaData) => {
@@ -52,7 +52,7 @@ const userController = {
   removeFriend({ params, body }, res) {
     User.findOneAndUpdate(
       { _id: params._id },
-      { $pull: { replies: { replyId: params.replyId } } },
+      { $pull: { friends: { replyId: params.replyId } } },
       { new: true }
     )
       .then((dbUserData) => res.json(dbUserData))
