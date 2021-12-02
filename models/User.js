@@ -1,6 +1,6 @@
 // const dateFormat = require("../utils/dateFormat");
 // WHY IS TYPES GREYED OUT??
-const { Schema, model, types } = require("mongoose");
+const { Schema, model, } = require("mongoose");
 
 const UserSchema = new Schema(
   {
@@ -31,11 +31,9 @@ const UserSchema = new Schema(
   },
   {
     toJSON: {
-      virtuals: true,
-      getters: true,
-      
+      virtuals: true    
     },
-    id: true,
+    id: false,
   }
 );
 
